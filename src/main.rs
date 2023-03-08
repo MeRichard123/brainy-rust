@@ -1,11 +1,14 @@
 // https://dgtools.readthedocs.io/en/latest/brainfuck.html
 use lexer::Tokenizer;
 use lexer::Intrinsic;
+use stack::LoopStack;
+
 use std::env;
 use std::fs;
 use std::io;
 
 pub mod lexer;
+pub mod stack;
 
 const MAX_SIZE: usize = 1000;
 
@@ -24,6 +27,7 @@ fn interpret(program: &Vec<lexer::Token>) {
     let mut pointer: usize = 0;
     let mut program_counter: i32 = 0;
     let mut stdout: Vec<String> = vec![];
+    let mut loop_stack: LoopStack<i32> = LoopStack::new();  
 
     while program_counter < program.len().try_into().unwrap() {
         let ptr = program_counter as usize;
@@ -62,14 +66,14 @@ fn interpret(program: &Vec<lexer::Token>) {
             },
 
             Intrinsic::Input      => {
-                let mut userInput = String::new();
+                let mut user_input = String::new();
                 
                 io::stdin()
-                    .read_line(&mut userInput)
+                    .read_line(&mut user_input)
                     .unwrap();
-                let parsedInput = userInput.trim();
+                let parsed_input = user_input.trim();
 
-                match parsedInput.parse::<char>() {
+                match parsed_input.parse::<char>() {
                     Ok(i) => {
                         tape[pointer] = i as i32;
                     },
@@ -86,11 +90,25 @@ fn interpret(program: &Vec<lexer::Token>) {
             },
 
             Intrinsic::JumpOver   => {
-                todo!();
+                loop_stack.push(program_counter);
             },
 
             Intrinsic::JumpBack   => {
-                todo!();   
+                if tape[pointer] > 0 {
+                    let block_start_pointer:Option<&i32> = loop_stack.peek();
+                    match block_start_pointer {
+                        Some(pointer_start) => {
+                            if tape[pointer] > 0 {
+                                program_counter = *pointer_start;
+                            }
+                            else if tape[pointer] == 0 {
+                                loop_stack.pop();
+                            }
+                        },
+                        None => panic!("Closing Interation Block Token missing Opening ["),
+                    }
+
+                }
             },
         }
         program_counter += 1;

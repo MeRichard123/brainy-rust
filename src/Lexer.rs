@@ -13,7 +13,7 @@ pub enum Intrinsic {
 #[derive(Debug)]
 pub struct Token {
     pub intrinsic: Intrinsic,
-    position: usize,
+    pub position: usize,
 }
 
 pub struct Tokenizer {
