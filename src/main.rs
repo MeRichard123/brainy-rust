@@ -120,13 +120,11 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         println!("Useage:");
-        println!("./brainfuck-interpreter ./bf/hello.bf");
+        println!("cargo run ./bf/hello.bf");
         panic!("File Path not Provided...");
     }
     let mut lexer: Tokenizer = lex_file(&args[1]);
     let token_vector: Vec<lexer::Token> = lexer.tokenize();
         
     interpret(&token_vector);
-
-    println!("Hello, world!");
 }
