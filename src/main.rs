@@ -12,6 +12,7 @@ pub mod stack;
 
 const MAX_SIZE: usize = 1000;
 
+// read a file and Tokenise it
 fn lex_file(file_path: &String) -> Tokenizer{
     let contents = fs::read_to_string(file_path)
         .expect("Read File");
@@ -125,6 +126,6 @@ fn main() {
     }
     let mut lexer: Tokenizer = lex_file(&args[1]);
     let token_vector: Vec<lexer::Token> = lexer.tokenize();
-        
+
     interpret(&token_vector);
 }

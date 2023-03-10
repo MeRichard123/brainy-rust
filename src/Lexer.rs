@@ -24,8 +24,22 @@ pub struct Tokenizer {
     column: i32,
 }
 
-fn report_error(token: char, line: i32, col: i32) {
+const TOKEN_KINDS: [char; 8]  = ['+','-', '>', '<', '.', ',', ']','['];
+
+fn report_error(token: char, line: i32, col: i32, content_slice: &str) {
     println!("Unexpected token: {token} found at {line}:{col}");
+    println!("\n{}", content_slice.trim());
+    
+    // determine if we have sliced because if not we can just place a ^ on the col
+    let spaces_repeat;
+    if col > 10 {
+        spaces_repeat = col - (col - 7) + 1;
+    }else{
+        spaces_repeat = col - 2;
+    }
+    
+    let spaces = " ".repeat((spaces_repeat).try_into().unwrap());  
+    println!("{spaces}^");
     panic!("Unexpected Token");
 }
 
@@ -42,9 +56,12 @@ impl Tokenizer {
     }
 
     fn next_lexeme(&mut self) -> Option<char> {
+        // gets individual lexemes in order
+        
+        // make sure we aren't at the end.
         if self.cursor < self.content_length.try_into().unwrap() {
-            let scontent = self.content.to_string();
-            let bcontent = scontent.as_bytes();
+            // need to convert to bytes so we can index it
+            let bcontent = self.content.as_bytes();
             let symbol: char = bcontent[self.cursor] as char; 
             self.cursor += 1;
             
@@ -56,7 +73,7 @@ impl Tokenizer {
             }
            
             // skipping lines with a comment.
-            if self.column == 1 && symbol.is_alphabetic() {
+            if self.column == 1 && !TOKEN_KINDS.contains(&symbol) {
                 let mut s: char = bcontent[self.cursor] as char;
                 while s != '\n'{
                     self.cursor += 1;
@@ -75,7 +92,9 @@ impl Tokenizer {
     }
 
    fn tokenize_single_character(&mut self, lexeme: Option<char>) -> Option<Token> {
-        match lexeme {
+       assert!(TOKEN_KINDS.len() == 8, "Exhaustive Keyword Handling");
+
+       match lexeme {
             Some('+') => {
                 let token = Token { intrinsic: Intrinsic::Increment, position: self.cursor };
                 return Some(token);
@@ -109,7 +128,30 @@ impl Tokenizer {
                 return Some(token);
             },
             Some(x) => {
-                report_error(x, self.line, self.column);
+                let lines = &self.content.split("\n");
+                let lines_vec = lines.clone()
+                    .collect::<Vec<&str>>()
+                    .iter()
+                    .map(|line| line.trim())
+                    .collect::<Vec<&str>>();
+
+                let error_line = lines_vec[((self.line - 1) as usize)];
+                
+                println!("{}", self.column);
+                let mut start = 0;
+                // handle underflow
+                if self.column > 10 {
+                    start = (self.column - 10) as usize;
+                }
+                
+                let mut end = (self.column + 7) as usize;
+                // handle overflow
+                if end > error_line.len() - 1 {
+                    end = error_line.len() - 1;
+                }
+                let code_slice: &str = &error_line[start..end];
+
+                report_error(x, self.line, self.column, code_slice);
                 return None;
             },
             None => {
