@@ -6,11 +6,19 @@ use stack::LoopStack;
 use std::env;
 use std::fs;
 use std::io;
+use std::process;
 
 pub mod lexer;
 pub mod stack;
 
+// max size for the tape
 const MAX_SIZE: usize = 1000;
+
+fn report_runtime_error(line: i32, column: i32, message: &str) {
+    // makes the text red/ orange
+    eprintln!("\x1b[93mError\x1b[0m {0}:{1} {2}", line, column, message);
+    process::exit(1);
+}
 
 // read a file and Tokenise it
 fn lex_file(file_path: &String) -> Tokenizer{
@@ -25,7 +33,9 @@ fn lex_file(file_path: &String) -> Tokenizer{
 
 fn interpret(program: &Vec<lexer::Token>) {
     let mut tape: [i32; MAX_SIZE] = [0; MAX_SIZE];
+    // pointer points to the current token in the file
     let mut pointer: usize = 0;
+    // the pc trackes where on the tape we are
     let mut program_counter: i32 = 0;
     let mut stdout: Vec<String> = vec![];
     let mut loop_stack: LoopStack<i32> = LoopStack::new();  
@@ -82,12 +92,17 @@ fn interpret(program: &Vec<lexer::Token>) {
                 }
             },
 
-            Intrinsic::Output     => {
+            Intrinsic::OutputChar  => {
                 let ascii = char::from_u32(tape[pointer].try_into().unwrap()); 
                 match ascii {
                     Some(x) => stdout.push(x.to_string()),
                     None => print!(""),
                 }
+            },
+
+            Intrinsic::OutputInt  => {
+                let integer = tape[pointer];
+                stdout.push(integer.to_string());
             },
 
             Intrinsic::JumpOver   => {
@@ -105,15 +120,83 @@ fn interpret(program: &Vec<lexer::Token>) {
                             else if tape[pointer] == 0 {
                                 loop_stack.pop();
                             }
+                        }, 
+                        None => {
+                            report_runtime_error(
+                                instruction.position.line,
+                                instruction.position.column,
+                                "Closing Interation Block Token missing Opening ["
+                            );
                         },
-                        None => panic!("Closing Interation Block Token missing Opening ["),
                     }
-
                 }
+            },
+            
+            Intrinsic::BitwiseAnd => {
+                if pointer < 1 {
+                    report_runtime_error(
+                        instruction.position.line,
+                        instruction.position.column,
+                        "Not enough operands for And operation."
+                    );
+                }
+                let value = tape[pointer-1] & tape[pointer];
+               
+                // check if we can allocate memory
+                if (pointer + 1) >= MAX_SIZE {
+                    report_runtime_error(
+                        instruction.position.line,
+                        instruction.position.column,
+                        "Segmentation Fault."
+                    );
+                }
+                // allocate memory for the result
+                pointer += 1;
+                tape[pointer] = value;
+            },
+
+            Intrinsic::BitwiseOr  => {
+                if pointer < 1 {
+                    report_runtime_error(
+                        instruction.position.line,
+                        instruction.position.column,
+                        "Not enough operands for Or operation."
+                    );
+                }
+                let value = tape[pointer-1] | tape[pointer];
+
+                // check if we can allocate memory
+                if (pointer + 1) >= MAX_SIZE {
+                    report_runtime_error(
+                        instruction.position.line,
+                        instruction.position.column,
+                        "Segmentation Fault."
+                    );
+                }
+                // allocate memory for the result
+                pointer += 1;
+                tape[pointer] = value;
+            },
+
+            Intrinsic::BitwiseNot => {
+                let value = !(tape[pointer]);
+                // check if we can allocate memory
+                if (pointer + 1) >= MAX_SIZE {
+                    report_runtime_error(
+                        instruction.position.line,
+                        instruction.position.column,
+                        "Segmentation Fault."
+                    );
+                }
+                // allocate memory for the result
+                pointer += 1;
+                tape[pointer] = value;
+                tape[pointer] = value;
             },
         }
         program_counter += 1;
     }
+
     println!("{}", stdout.join(""));
 } 
 

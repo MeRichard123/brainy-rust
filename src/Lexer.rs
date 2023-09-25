@@ -5,15 +5,26 @@ pub enum Intrinsic {
     Increment,
     Decrement,
     Input,
-    Output,
+    OutputChar,
+    OutputInt,
     JumpOver,
     JumpBack,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseNot,
 }
+
+#[derive(Debug)]
+pub struct Loc {
+    pub line: i32,
+    pub column: i32,
+}
+
 
 #[derive(Debug)]
 pub struct Token {
     pub intrinsic: Intrinsic,
-    pub position: usize,
+    pub position: Loc,
 }
 
 pub struct Tokenizer {
@@ -24,9 +35,9 @@ pub struct Tokenizer {
     column: i32,
 }
 
-const TOKEN_KINDS: [char; 8]  = ['+','-', '>', '<', '.', ',', ']','['];
+const TOKEN_KINDS: [char; 12]  = ['+','-', '>', '<', '.','#', ',', ']','[', '&', '|', '!'];
 
-fn report_error(token: char, line: i32, col: i32, content_slice: &str) {
+fn report_compiletime_error(token: char, line: i32, col: i32, content_slice: &str) {
     println!("Unexpected token: {token} found at {line}:{col}");
     println!("\n{}", content_slice.trim());
     
@@ -92,39 +103,57 @@ impl Tokenizer {
     }
 
    fn tokenize_single_character(&mut self, lexeme: Option<char>) -> Option<Token> {
-       assert!(TOKEN_KINDS.len() == 8, "Exhaustive Keyword Handling");
+       assert!(TOKEN_KINDS.len() == 12, "Exhaustive Keyword Handling");
+
+       let pos: Loc = Loc { line: self.line, column: self.column };
 
        match lexeme {
             Some('+') => {
-                let token = Token { intrinsic: Intrinsic::Increment, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::Increment, position: pos };
                 return Some(token);
             },
             Some('-') => {
-                let token = Token { intrinsic: Intrinsic::Decrement, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::Decrement, position: pos };
                 return Some(token);
             },
             Some('>') => {
-                let token = Token { intrinsic: Intrinsic::ShiftRight, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::ShiftRight, position: pos };
                 return Some(token);
             },
             Some('<') => {
-                let token = Token { intrinsic: Intrinsic::ShiftLeft, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::ShiftLeft, position: pos };
                 return Some(token);
             },
             Some('[') => {
-                let token = Token { intrinsic: Intrinsic::JumpOver, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::JumpOver, position: pos };
                 return Some(token);
             },
             Some(']') => {
-                let token = Token { intrinsic: Intrinsic::JumpBack, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::JumpBack, position: pos };
                 return Some(token);
             },
             Some(',') => {
-                let token = Token { intrinsic: Intrinsic::Input, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::Input, position: pos };
                 return Some(token);
             },
             Some('.') => {
-                let token = Token { intrinsic: Intrinsic::Output, position: self.cursor };
+                let token = Token { intrinsic: Intrinsic::OutputChar, position: pos };
+                return Some(token);
+            },
+            Some('#') => {
+                let token = Token { intrinsic: Intrinsic::OutputInt, position: pos };
+                return Some(token);
+            },
+            Some('&') => {
+                let token = Token { intrinsic: Intrinsic::BitwiseAnd, position: pos };
+                return Some(token);
+            },
+            Some('|') => {
+                let token = Token { intrinsic: Intrinsic::BitwiseOr, position: pos };
+                return Some(token);
+            },
+            Some('!') => {
+                let token = Token { intrinsic: Intrinsic::BitwiseNot, position: pos };
                 return Some(token);
             },
             Some(x) => {
@@ -151,7 +180,7 @@ impl Tokenizer {
                 }
                 let code_slice: &str = &error_line[start..end];
 
-                report_error(x, self.line, self.column, code_slice);
+                report_compiletime_error(x, self.line, self.column, code_slice);
                 return None;
             },
             None => {
