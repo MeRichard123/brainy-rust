@@ -42,7 +42,7 @@ The result is the value of `4|5` which is 5.
 This will output the complement of 7 hence the result is result is -8.
 | Note: NOT is a unary operation so doesn't require a second operand. 
 
-| Note: we don't need to move to the next call by calling `>` after the bitwise operation, because the operators increment the current pointer themseves. You have to call `<` if you wanted the value of the second operand after the operation has completed.
+> Note: we don't need to move to the next call by calling `>` after the bitwise operation, because the operators increment the current pointer themseves. You have to call `<` if you wanted the value of the second operand after the operation has completed.
 
 ## Dealing with Loops \[ and \] 
 I had two solutions 
