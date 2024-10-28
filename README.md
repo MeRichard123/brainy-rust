@@ -15,7 +15,7 @@ Generally you would have to set the current value on the tape to the ascii value
 ```brainfuck
 +++++#
 ```
-* Works exactly like `.` expect doesn't interpret as an ASCII character.
+* Works exactly like `.` except doesn't interpret as an ASCII character.
 
 ### Bitwise Operations
 You can now use bitwise operations more easily, the operations **allocate memory** and the result is stored in the the next,
