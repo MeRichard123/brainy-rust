@@ -21,7 +21,7 @@ Generally you would have to set the current value on the tape to the ascii value
 You can now use bitwise operations more easily, the operations **allocate memory** and the result is stored in the the next,
 slot on the tape. If there is no space it will segfault. 
 The primary reason is, I found that sometimes you may need the operand values later, so I opted to not overwrite it.
-| Note: in this case 'allocating memory' simply means the another slot of the tape is used rather than using an inplace operation.
+> Note: in this case 'allocating memory' simply means the another slot of the tape is used rather than using an inplace operation.
 
 **AND**
 ```bf
